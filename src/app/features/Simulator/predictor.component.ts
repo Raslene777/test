@@ -686,13 +686,17 @@ function computeStats(actual: number[], forecast: number[]): SimStats {
       <div class="stat-label">Theil U</div>
       <div class="stat-value" [style.color]="theilColor">{{ stats ? stats.theilU.toFixed(3) : '—' }}</div>
       <div class="stat-sub">
-        <span *ngIf="theilLabel" class="badge"
-              [style.background]="theilColor + '1a'"
-              [style.color]="theilColor"
-              [style.border]="'1px solid ' + theilColor + '44'">
-          {{ theilLabel }}
-        </span>
-        <span *ngIf="!theilLabel">U &lt; 1 beats naive</span>
+        @if (theilLabel) {
+          <span class="badge"
+                [style.background]="theilColor + '1a'"
+                [style.color]="theilColor"
+                [style.border]="'1px solid ' + theilColor + '44'">
+            {{ theilLabel }}
+          </span>
+        }
+        @if (!theilLabel) {
+          <span>U &lt; 1 beats naive</span>
+        }
       </div>
     </div>
 
@@ -741,38 +745,44 @@ function computeStats(actual: number[], forecast: number[]): SimStats {
           </div>
         </div>
 
-        <div *ngIf="activeTab==='chart'" class="chart-area">
-          <div class="legend">
-            <span class="legend-item"><span class="legend-line" style="background:var(--accent-bright)"></span>Actual</span>
-            <span class="legend-item"><span class="legend-line" style="background:#f87171"></span>Forecast</span>
-            <span class="legend-item"><span class="legend-line" style="background:var(--dim)"></span>Naive</span>
-            <span class="legend-item"><span class="legend-band"></span>Confidence ±1σ</span>
+        @if (activeTab === 'chart') {
+          <div class="chart-area">
+            <div class="legend">
+              <span class="legend-item"><span class="legend-line" style="background:var(--accent-bright)"></span>Actual</span>
+              <span class="legend-item"><span class="legend-line" style="background:#f87171"></span>Forecast</span>
+              <span class="legend-item"><span class="legend-line" style="background:var(--dim)"></span>Naive</span>
+              <span class="legend-item"><span class="legend-band"></span>Confidence ±1σ</span>
+            </div>
+            <div class="canvas-wrap"><canvas #priceCanvas></canvas></div>
           </div>
-          <div class="canvas-wrap"><canvas #priceCanvas></canvas></div>
-        </div>
+        }
 
-        <div *ngIf="activeTab==='residuals'" class="chart-area">
-          <div class="canvas-wrap"><canvas #residCanvas></canvas></div>
-        </div>
+        @if (activeTab === 'residuals') {
+          <div class="chart-area">
+            <div class="canvas-wrap"><canvas #residCanvas></canvas></div>
+          </div>
+        }
 
-        <div *ngIf="activeTab==='formula'" class="formula-wrap">
-          <pre class="formula-pre">{{ cfg.formula }}</pre>
-          <div class="formula-about">
-            <div class="formula-about-label">About</div>
-            <div class="formula-about-text">
-              {{ cfg.label }} —
-              {{ cfg.group === 'math' ? 'Mathematical stochastic process' : 'Machine learning regressor' }}
-              · {{ cfg.params.length }} parameters
+        @if (activeTab === 'formula') {
+          <div class="formula-wrap">
+            <pre class="formula-pre">{{ cfg.formula }}</pre>
+            <div class="formula-about">
+              <div class="formula-about-label">About</div>
+              <div class="formula-about-text">
+                {{ cfg.label }} —
+                {{ cfg.group === 'math' ? 'Mathematical stochastic process' : 'Machine learning regressor' }}
+                · {{ cfg.params.length }} parameters
+              </div>
             </div>
           </div>
-        </div>
+        }
       </div>
 
       <!-- Theil decomposition -->
       <div class="card">
         <div class="card-body">
           <div class="sec-label">Theil U decomposition</div>
-          <ng-container *ngIf="stats">
+          @if (stats) {
             <div class="theil-row">
               <div class="theil-row-head">
                 <span class="theil-row-label">Bias (U^M) — systematic over/under-prediction</span>
@@ -806,7 +816,7 @@ function computeStats(actual: number[], forecast: number[]): SimStats {
             <div class="theil-note">
               Ideal: most error in U^C (noise), minimal U^M (bias) and U^S (variance mismatch).
             </div>
-          </ng-container>
+          }
         </div>
       </div>
 
@@ -827,19 +837,25 @@ function computeStats(actual: number[], forecast: number[]): SimStats {
               </span>
               <span class="dropdown-arrow" [class.open]="dropdownOpen">▼</span>
             </button>
-            <div *ngIf="dropdownOpen" class="dropdown-menu">
-              <div class="dropdown-group-label">Mathematical models</div>
-              <div *ngFor="let key of mathKeys" class="dropdown-item math"
-                   [class.item-active]="modelKey === key" (click)="selectModel(key)">
-                <span class="badge badge-green">{{ models[key].short }}</span>{{ models[key].label }}
+            @if (dropdownOpen) {
+              <div class="dropdown-menu">
+                <div class="dropdown-group-label">Mathematical models</div>
+                @for (key of mathKeys; track key) {
+                  <div class="dropdown-item math"
+                       [class.item-active]="modelKey === key" (click)="selectModel(key)">
+                    <span class="badge badge-green">{{ models[key].short }}</span>{{ models[key].label }}
+                  </div>
+                }
+                <div class="dropdown-divider"></div>
+                <div class="dropdown-group-label">Machine learning</div>
+                @for (key of mlKeys; track key) {
+                  <div class="dropdown-item ml"
+                       [class.item-active]="modelKey === key" (click)="selectModel(key)">
+                    <span class="badge badge-purple">{{ models[key].short }}</span>{{ models[key].label }}
+                  </div>
+                }
               </div>
-              <div class="dropdown-divider"></div>
-              <div class="dropdown-group-label">Machine learning</div>
-              <div *ngFor="let key of mlKeys" class="dropdown-item ml"
-                   [class.item-active]="modelKey === key" (click)="selectModel(key)">
-                <span class="badge badge-purple">{{ models[key].short }}</span>{{ models[key].label }}
-              </div>
-            </div>
+            }
           </div>
         </div>
       </div>
@@ -848,23 +864,27 @@ function computeStats(actual: number[], forecast: number[]): SimStats {
       <div class="card">
         <div class="card-body">
           <div class="sec-label">Parameters</div>
-          <div *ngFor="let param of cfg.params" class="param-row">
-            <div class="param-header">
-              <span class="param-label">{{ param.label }}</span>
-              <div class="param-right">
-                <span class="param-value">{{ formatVal(param) }}</span>
-                <button *ngIf="param.est" class="est-btn" [class.loading]="estimatingId === param.id"
-                        (click)="estimate(param)">
-                  {{ estimatingId === param.id ? '…' : 'Estimate' }}
-                </button>
+          @for (param of cfg.params; track param.id) {
+            <div class="param-row">
+              <div class="param-header">
+                <span class="param-label">{{ param.label }}</span>
+                <div class="param-right">
+                  <span class="param-value">{{ formatVal(param) }}</span>
+                  @if (param.est) {
+                    <button class="est-btn" [class.loading]="estimatingId === param.id"
+                            (click)="estimate(param)">
+                      {{ estimatingId === param.id ? '…' : 'Estimate' }}
+                    </button>
+                  }
+                </div>
               </div>
+              <input type="range" class="slider"
+                     [min]="param.min" [max]="param.max" [step]="param.step"
+                     [value]="paramVals[modelKey + '_' + param.id]"
+                     [style.background]="sliderBg(param)"
+                     (input)="onParamChange(param, $event)" />
             </div>
-            <input type="range" class="slider"
-                   [min]="param.min" [max]="param.max" [step]="param.step"
-                   [value]="paramVals[modelKey + '_' + param.id]"
-                   [style.background]="sliderBg(param)"
-                   (input)="onParamChange(param, $event)" />
-          </div>
+          }
         </div>
       </div>
 
@@ -872,10 +892,12 @@ function computeStats(actual: number[], forecast: number[]): SimStats {
       <div class="card">
         <div class="card-body">
           <div class="sec-label">Statistics</div>
-          <div *ngFor="let row of statsRows" class="stats-row">
-            <span class="stats-key">{{ row.label }}</span>
-            <span class="stats-val" [style.color]="row.color">{{ row.value }}</span>
-          </div>
+          @for (row of statsRows; track row.label) {
+            <div class="stats-row">
+              <span class="stats-key">{{ row.label }}</span>
+              <span class="stats-val" [style.color]="row.color">{{ row.value }}</span>
+            </div>
+          }
         </div>
       </div>
 
@@ -1037,8 +1059,7 @@ export class PredictorComponent implements OnInit, AfterViewInit, OnDestroy {
         const gridColor = 'rgba(100,140,255,0.07)';
         const tickColor = 'rgba(170,185,240,0.45)';
 
-        // @ts-ignore
-        const cfg: ChartConfiguration = {
+        const cfg: ChartConfiguration<'line'> = {
             type: 'line',
             data: {
                 labels,
@@ -1065,14 +1086,24 @@ export class PredictorComponent implements OnInit, AfterViewInit, OnDestroy {
                         backgroundColor: 'rgba(8,12,38,0.95)',
                         borderColor: 'rgba(100,140,255,0.25)', borderWidth: 1,
                         titleColor: tickColor, bodyColor: '#dde6ff',
-                        callbacks: { label: (ctx: TooltipItem<'line'>) => ` ${ctx.dataset.label}: $${(ctx.raw as number).toFixed(2)}` },
+                        callbacks: {
+                            label: (ctx: TooltipItem<'line'>) => ` ${ctx.dataset.label}: $${(ctx.raw as number).toFixed(2)}`
+                        },
                     },
                 },
                 scales: {
-                    x: { ticks: { color: tickColor, font: { size: 10 }, maxTicksLimit: 10 }, grid: { color: gridColor } },
-                    y: { ticks: { color: tickColor, font: { size: 10 },
-                            callback: (v: number | string) => `$${(v as number).toFixed(0)}` },
-                        grid: { color: gridColor } },
+                    x: {
+                        ticks: { color: tickColor, font: { size: 10 }, maxTicksLimit: 10 },
+                        grid: { color: gridColor }
+                    },
+                    y: {
+                        ticks: {
+                            color: tickColor,
+                            font: { size: 10 },
+                            callback: (value) => `$${Number(value).toFixed(0)}`
+                        },
+                        grid: { color: gridColor }
+                    },
                 },
             },
         };
@@ -1090,32 +1121,48 @@ export class PredictorComponent implements OnInit, AfterViewInit, OnDestroy {
         const gridColor = 'rgba(100,140,255,0.07)';
         const tickColor = 'rgba(170,185,240,0.45)';
 
-        const cfg: ChartConfiguration = {
+        const cfg: ChartConfiguration<'bar'> = {
             type: 'bar',
             data: {
                 labels,
                 datasets: [{
-                    label: 'Residual', data: errors,
+                    label: 'Residual',
+                    data: errors,
                     backgroundColor: errors.map(e => e >= 0 ? 'rgba(0,229,160,0.6)' : 'rgba(248,113,113,0.6)'),
-                    borderWidth: 0, borderRadius: 2,
+                    borderWidth: 0,
+                    borderRadius: 2,
                 }],
             },
             options: {
-                responsive: true, maintainAspectRatio: false, animation: { duration: 350 },
+                responsive: true,
+                maintainAspectRatio: false,
+                animation: { duration: 350 },
                 plugins: {
                     legend: { display: false },
                     tooltip: {
                         backgroundColor: 'rgba(8,12,38,0.95)',
-                        borderColor: 'rgba(100,140,255,0.25)', borderWidth: 1,
-                        titleColor: tickColor, bodyColor: '#dde6ff',
-                        callbacks: { label: (ctx: TooltipItem<'bar'>) => ` Residual: ${(ctx.raw as number).toFixed(2)}` },
+                        borderColor: 'rgba(100,140,255,0.25)',
+                        borderWidth: 1,
+                        titleColor: tickColor,
+                        bodyColor: '#dde6ff',
+                        callbacks: {
+                            label: (ctx: TooltipItem<'bar'>) => ` Residual: ${(ctx.raw as number).toFixed(2)}`
+                        },
                     },
                 },
                 scales: {
-                    x: { ticks: { color: tickColor, font: { size: 10 }, maxTicksLimit: 10 }, grid: { display: false } },
-                    y: { ticks: { color: tickColor, font: { size: 10 },
-                            callback: (v: number | string) => (v as number).toFixed(1) },
-                        grid: { color: gridColor } },
+                    x: {
+                        ticks: { color: tickColor, font: { size: 10 }, maxTicksLimit: 10 },
+                        grid: { display: false }
+                    },
+                    y: {
+                        ticks: {
+                            color: tickColor,
+                            font: { size: 10 },
+                            callback: (value) => Number(value).toFixed(1)
+                        },
+                        grid: { color: gridColor }
+                    },
                 },
             },
         };
