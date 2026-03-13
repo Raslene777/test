@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>GoblinBroker — Market Overview</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --bg: #07070f;
+    --bg2: #0d0d1a;
+    --bg3: #12121f;
+    --border: rgba(120, 80, 255, 0.18);
+    --purple: #7c4dff;
+    --purple-light: #a87fff;
+    --blue: #3d9eff;
+    --green: #00e5a0;
+    --red: #ff4d6a;
+    --gold: #f5c542;
+    --muted: #5a5a80;
+    --text: #e8e8f5;
+    --text2: #a0a0c0;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Mono', monospace;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 0;
+    opacity: 0.5;
+  }
+
+  /* NAV */
+  nav {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0 32px; height: 60px;
+    border-bottom: 1px solid var(--border);
+    background: rgba(7,7,15,0.95);
+    backdrop-filter: blur(12px);
+    position: sticky; top: 0; z-index: 100;
+  }
+  .nav-logo { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 1.2rem; letter-spacing: -0.5px; display: flex; align-items: center; gap: 8px; }
+  .nav-logo span { color: var(--purple-light); }
+  .nav-links { display: flex; gap: 28px; font-size: 0.78rem; color: var(--muted); letter-spacing: 0.5px; }
+  .nav-links a { color: var(--muted); text-decoration: none; transition: color 0.2s; cursor: pointer; }
+  .nav-links a:hover { color: var(--text); }
+  .nav-links a.active { color: var(--purple-light); }
+  .btn-connect { font-family: 'DM Mono', monospace; font-size: 0.75rem; padding: 7px 16px; border-radius: 6px; border: 1px solid var(--purple); background: transparent; color: var(--purple-light); cursor: pointer; transition: all 0.2s; letter-spacing: 0.5px; }
+  .btn-connect:hover { background: rgba(124,77,255,0.15); }
+
+  /* STATUS BAR */
+  .status-bar {
+    display: flex; align-items: center; gap: 24px;
+    padding: 8px 32px;
+    background: rgba(13,13,26,0.8);
+    border-bottom: 1px solid var(--border);
+    font-size: 0.72rem; color: var(--muted);
+    overflow: hidden;
+  }
+  .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--green); display: inline-block; margin-right: 6px; animation: pulse 2s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1;} 50%{opacity:0.3;} }
+  .status-item { display: flex; align-items: center; gap: 4px; white-space: nowrap; }
+  .status-item .val { color: var(--text2); font-weight: 500; }
+  .up { color: var(--green); }
+  .dn { color: var(--red); }
+  .ticker-scroll { flex: 1; overflow: hidden; mask-image: linear-gradient(to right, transparent, black 5%, black 95%, transparent); }
+  .ticker-inner { display: flex; gap: 32px; animation: scrollx 30s linear infinite; width: max-content; }
+  @keyframes scrollx { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+  .ticker-item { display: flex; gap: 8px; }
+  .ticker-item .sym { color: var(--text2); font-weight: 500; }
+
+  /* MAIN */
+  .main { padding: 28px 32px 48px; max-width: 1400px; margin: 0 auto; position: relative; z-index: 1; }
+
+  /* PAGE HEADER */
+  .page-header { display: flex; align-items: flex-end; justify-content: space-between; margin-bottom: 28px; animation: fadeUp 0.5s ease both; }
+  .page-title { font-family: 'Syne', sans-serif; font-size: 1.9rem; font-weight: 800; letter-spacing: -1px; line-height: 1; }
+  .page-title span { color: var(--purple-light); }
+  .page-sub { font-size: 0.75rem; color: var(--muted); margin-top: 6px; }
+  .time-filters { display: flex; gap: 4px; }
+  .tf { font-family: 'DM Mono', monospace; font-size: 0.72rem; padding: 5px 12px; border-radius: 5px; border: 1px solid var(--border); background: transparent; color: var(--muted); cursor: pointer; transition: all 0.2s; }
+  .tf:hover { border-color: var(--purple); color: var(--text); }
+  .tf.active { background: rgba(124,77,255,0.2); border-color: var(--purple); color: var(--purple-light); }
+
+  /* KPI CARDS */
+  .kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px; animation: fadeUp 0.5s 0.1s ease both; }
+  .kpi-card { background: var(--bg2); border: 1px solid var(--border); border-radius: 12px; padding: 20px 22px; position: relative; overflow: hidden; transition: transform 0.2s, border-color 0.2s; }
+  .kpi-card:hover { transform: translateY(-2px); border-color: rgba(124,77,255,0.4); }
+  .kpi-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px; background: var(--accent, var(--purple)); opacity: 0.8; }
+  .kpi-label { font-size: 0.7rem; color: var(--muted); letter-spacing: 1px; text-transform: uppercase; margin-bottom: 10px; }
+  .kpi-value { font-family: 'Syne', sans-serif; font-size: 1.65rem; font-weight: 700; letter-spacing: -1px; line-height: 1; margin-bottom: 8px; }
+  .kpi-change { font-size: 0.75rem; display: flex; align-items: center; gap: 6px; }
+  .kpi-icon { position: absolute; right: 18px; top: 18px; font-size: 1.3rem; opacity: 0.25; }
+  .fear-dial { width: 100%; height: 6px; background: linear-gradient(to right, var(--red), var(--gold), var(--green)); border-radius: 3px; margin-top: 8px; position: relative; }
+  .fear-needle { position: absolute; top: -4px; left: 62%; width: 14px; height: 14px; background: white; border-radius: 50%; border: 2px solid var(--bg); transform: translateX(-50%); box-shadow: 0 0 8px rgba(255,255,255,0.4); }
+
+  /* CHART + MOVERS */
+  .mid-grid { display: grid; grid-template-columns: 1fr 340px; gap: 16px; margin-bottom: 24px; animation: fadeUp 0.5s 0.2s ease both; }
+  .chart-card { background: var(--bg2); border: 1px solid var(--border); border-radius: 12px; padding: 22px; overflow: hidden; }
+  .card-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px; }
+  .card-title { font-family: 'Syne', sans-serif; font-size: 0.95rem; font-weight: 700; display: flex; align-items: center; gap: 10px; }
+  .asset-tabs { display: flex; gap: 4px; }
+  .at { font-family: 'DM Mono', monospace; font-size: 0.68rem; padding: 4px 10px; border-radius: 4px; border: 1px solid var(--border); background: transparent; color: var(--muted); cursor: pointer; transition: all 0.2s; }
+  .at.active { background: rgba(124,77,255,0.2); border-color: var(--purple); color: var(--purple-light); }
+  .chart-wrap { position: relative; height: 180px; }
+  .chart-wrap svg { width: 100%; height: 100%; }
+  .chart-price-label { position: absolute; top: 0; right: 0; text-align: right; }
+  .chart-price-label .price { font-family: 'Syne', sans-serif; font-size: 1.5rem; font-weight: 700; letter-spacing: -1px; }
+  .chart-price-label .chg { font-size: 0.75rem; color: var(--green); }
+  .chart-x-labels { display: flex; justify-content: space-between; font-size: 0.65rem; color: var(--muted); margin-top: 6px; padding: 0 2px; }
+
+  /* MOVERS */
+  .movers-card { background: var(--bg2); border: 1px solid var(--border); border-radius: 12px; padding: 22px; display: flex; flex-direction: column; }
+  .movers-tabs { display: flex; gap: 0; border: 1px solid var(--border); border-radius: 6px; overflow: hidden; margin-top: 14px; margin-bottom: 16px; }
+  .mt { flex: 1; font-family: 'DM Mono', monospace; font-size: 0.7rem; padding: 6px; text-align: center; border: none; background: transparent; color: var(--muted); cursor: pointer; transition: all 0.2s; }
+  .mt.active-g { background: rgba(0,229,160,0.15); color: var(--green); }
+  .mover-row { display: flex; align-items: center; padding: 9px 0; border-bottom: 1px solid rgba(255,255,255,0.04); gap: 10px; }
+  .mover-row:last-child { border-bottom: none; }
+  .mover-icon { width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 700; flex-shrink: 0; }
+  .mover-info { flex: 1; }
+  .mover-name { font-size: 0.8rem; font-weight: 500; color: var(--text); }
+  .mover-full { font-size: 0.65rem; color: var(--muted); }
+  .mover-right { text-align: right; }
+  .mover-price { font-size: 0.8rem; font-weight: 500; }
+  .mover-pct { font-size: 0.75rem; font-weight: 600; padding: 2px 7px; border-radius: 4px; display: inline-block; margin-top: 2px; }
+  .pct-up { color: var(--green); background: rgba(0,229,160,0.12); }
+  .pct-dn { color: var(--red); background: rgba(255,77,106,0.12); }
+
+  /* HEATMAP */
+  .heatmap-section { margin-bottom: 24px; animation: fadeUp 0.5s 0.3s ease both; }
+  .section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+  .section-title { font-family: 'Syne', sans-serif; font-size: 0.95rem; font-weight: 700; }
+  .see-all { font-size: 0.7rem; color: var(--purple-light); cursor: pointer; letter-spacing: 0.5px; }
+  .heatmap-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; }
+  .heat-cell { border-radius: 8px; padding: 14px 12px; display: flex; flex-direction: column; gap: 4px; cursor: pointer; transition: transform 0.2s, filter 0.2s; }
+  .heat-cell:hover { transform: scale(1.03); filter: brightness(1.15); }
+  .heat-cell.big { grid-column: span 2; }
+  .heat-name { font-family: 'Syne', sans-serif; font-size: 0.85rem; font-weight: 700; }
+  .heat-pct { font-size: 0.8rem; font-weight: 500; }
+  .heat-vol { font-size: 0.62rem; opacity: 0.7; }
+
+  /* TABLE */
+  .table-section { animation: fadeUp 0.5s 0.4s ease both; }
+  .assets-table { width: 100%; border-collapse: collapse; }
+  .assets-table thead tr th { font-size: 0.65rem; color: var(--muted); text-align: left; padding: 8px 12px; letter-spacing: 1px; text-transform: uppercase; border-bottom: 1px solid var(--border); font-weight: 400; }
+  .assets-table tbody tr { border-bottom: 1px solid rgba(255,255,255,0.04); transition: background 0.15s; cursor: pointer; }
+  .assets-table tbody tr:hover { background: rgba(124,77,255,0.06); }
+  .assets-table td { padding: 12px 12px; font-size: 0.8rem; vertical-align: middle; }
+  .asset-cell { display: flex; align-items: center; gap: 10px; }
+  .asset-logo { width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.65rem; font-weight: 700; flex-shrink: 0; }
+  .asset-n { font-weight: 500; color: var(--text); }
+  .asset-s { font-size: 0.65rem; color: var(--muted); }
+  .td-right { text-align: right; }
+  .td-num { font-variant-numeric: tabular-nums; }
+  .sparkline { display: flex; align-items: flex-end; gap: 2px; height: 28px; }
+  .spark-bar { width: 4px; border-radius: 2px; }
+  .sp-green .spark-bar { background: var(--green); }
+  .sp-red .spark-bar { background: var(--red); }
+  .btn-trade { font-family: 'DM Mono', monospace; font-size: 0.68rem; padding: 5px 14px; border-radius: 5px; border: 1px solid var(--purple); background: rgba(124,77,255,0.1); color: var(--purple-light); cursor: pointer; transition: all 0.2s; letter-spacing: 0.5px; }
+  .btn-trade:hover { background: rgba(124,77,255,0.25); }
+
+  /* AI BANNER */
+  .ai-banner { margin-top: 24px; background: linear-gradient(135deg, rgba(124,77,255,0.12), rgba(61,158,255,0.08)); border: 1px solid rgba(124,77,255,0.35); border-radius: 14px; padding: 24px 28px; display: flex; align-items: center; justify-content: space-between; gap: 20px; animation: fadeUp 0.5s 0.5s ease both; position: relative; overflow: hidden; }
+  .ai-banner::before { content: ''; position: absolute; top: -40px; right: -40px; width: 180px; height: 180px; background: radial-gradient(circle, rgba(124,77,255,0.2) 0%, transparent 70%); pointer-events: none; }
+  .ai-glyph { font-size: 2rem; flex-shrink: 0; }
+  .ai-text .ai-title { font-family: 'Syne', sans-serif; font-size: 1rem; font-weight: 700; margin-bottom: 4px; }
+  .ai-text .ai-sub { font-size: 0.75rem; color: var(--text2); }
+  .ai-input-wrap { flex: 1; display: flex; gap: 8px; max-width: 420px; }
+  .ai-input { flex: 1; background: rgba(255,255,255,0.06); border: 1px solid var(--border); border-radius: 8px; padding: 9px 14px; font-family: 'DM Mono', monospace; font-size: 0.75rem; color: var(--text); outline: none; transition: border-color 0.2s; }
+  .ai-input::placeholder { color: var(--muted); }
+  .ai-input:focus { border-color: var(--purple); }
+  .btn-ask { font-family: 'DM Mono', monospace; font-size: 0.75rem; padding: 9px 18px; border-radius: 8px; border: none; background: var(--purple); color: white; cursor: pointer; transition: all 0.2s; white-space: nowrap; }
+  .btn-ask:hover { background: var(--purple-light); }
+
+  @keyframes fadeUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-logo">🧙 Goblin<span>Broker</span></div>
+  <div class="nav-links">
+    <a href="#">Home</a>
+    <a href="#" class="active">Market ▾</a>
+    <a href="#">Portfolio</a>
+    <a href="#">Trade</a>
+    <a href="#">Analytics</a>
+  </div>
+  <div>
+    <button class="btn-connect">Connect Wallet</button>
+  </div>
+</nav>
+
+<!-- STATUS BAR / TICKER -->
+<div class="status-bar">
+  <div class="status-item"><span class="dot"></span> <span style="color:var(--green)">Market Open</span></div>
+  <div class="status-item">NYSE <span class="val up">+0.84%</span></div>
+  <div class="status-item">NASDAQ <span class="val up">+1.12%</span></div>
+  <div class="status-item">BTC <span class="val dn">-0.43%</span></div>
+  <div class="ticker-scroll">
+    <div class="ticker-inner">
+      <span class="ticker-item"><span class="sym">AAPL</span> $218.40 <span class="up">▲2.1%</span></span>
+      <span class="ticker-item"><span class="sym">TSLA</span> $172.80 <span class="dn">▼1.4%</span></span>
+      <span class="ticker-item"><span class="sym">NVDA</span> $890.50 <span class="up">▲3.7%</span></span>
+      <span class="ticker-item"><span class="sym">ETH</span> $3,420 <span class="up">▲0.9%</span></span>
+      <span class="ticker-item"><span class="sym">AMZN</span> $198.20 <span class="up">▲1.6%</span></span>
+      <span class="ticker-item"><span class="sym">MSFT</span> $415.30 <span class="dn">▼0.3%</span></span>
+      <span class="ticker-item"><span class="sym">GOOG</span> $178.90 <span class="up">▲0.7%</span></span>
+      <span class="ticker-item"><span class="sym">SOL</span> $186.40 <span class="up">▲4.2%</span></span>
+      <span class="ticker-item"><span class="sym">AAPL</span> $218.40 <span class="up">▲2.1%</span></span>
+      <span class="ticker-item"><span class="sym">TSLA</span> $172.80 <span class="dn">▼1.4%</span></span>
+      <span class="ticker-item"><span class="sym">NVDA</span> $890.50 <span class="up">▲3.7%</span></span>
+      <span class="ticker-item"><span class="sym">ETH</span> $3,420 <span class="up">▲0.9%</span></span>
+      <span class="ticker-item"><span class="sym">AMZN</span> $198.20 <span class="up">▲1.6%</span></span>
+      <span class="ticker-item"><span class="sym">MSFT</span> $415.30 <span class="dn">▼0.3%</span></span>
+      <span class="ticker-item"><span class="sym">GOOG</span> $178.90 <span class="up">▲0.7%</span></span>
+      <span class="ticker-item"><span class="sym">SOL</span> $186.40 <span class="up">▲4.2%</span></span>
+    </div>
+  </div>
+</div>
+
+<!-- MAIN -->
+<div class="main">
+
+  <!-- PAGE HEADER -->
+  <div class="page-header">
+    <div>
+      <div class="page-title">Market <span>Overview</span></div>
+      <div class="page-sub">Tuesday, March 03, 2026 &nbsp;·&nbsp; Real-time data</div>
+    </div>
+    <div class="time-filters">
+      <button class="tf">1H</button>
+      <button class="tf active">1D</button>
+      <button class="tf">1W</button>
+      <button class="tf">1M</button>
+      <button class="tf">1Y</button>
+    </div>
+  </div>
+
+  <!-- KPI CARDS -->
+  <div class="kpi-grid">
+    <div class="kpi-card" style="--accent:var(--blue)">
+      <div class="kpi-icon">📈</div>
+      <div class="kpi-label">S&P 500</div>
+      <div class="kpi-value">5,862</div>
+      <div class="kpi-change up">▲ +48.2 &nbsp;(+0.84%)</div>
+    </div>
+    <div class="kpi-card" style="--accent:var(--purple)">
+      <div class="kpi-icon">💰</div>
+      <div class="kpi-label">Total Market Cap</div>
+      <div class="kpi-value">$47.3T</div>
+      <div class="kpi-change up">▲ +$312B today</div>
+    </div>
+    <div class="kpi-card" style="--accent:var(--green)">
+      <div class="kpi-icon">🔄</div>
+      <div class="kpi-label">24h Volume</div>
+      <div class="kpi-value">$2.18T</div>
+      <div class="kpi-change dn">▼ -4.2% vs avg</div>
+    </div>
+    <div class="kpi-card" style="--accent:var(--gold)">
+      <div class="kpi-icon">😨</div>
+      <div class="kpi-label">Fear &amp; Greed Index</div>
+      <div class="kpi-value" style="color:var(--gold)">62 <span style="font-size:0.9rem;color:var(--text2)">Greed</span></div>
+      <div class="fear-dial"><div class="fear-needle"></div></div>
+    </div>
+  </div>
+
+  <!-- CHART + MOVERS -->
+  <div class="mid-grid">
+    <div class="chart-card">
+      <div class="card-header">
+        <div class="card-title">Price Chart</div>
+        <div class="asset-tabs">
+          <button class="at active">BTC</button>
+          <button class="at">ETH</button>
+          <button class="at">SPX</button>
+          <button class="at">NVDA</button>
+        </div>
+      </div>
+      <div class="chart-wrap">
+        <div class="chart-price-label">
+          <div class="price">$85,420</div>
+          <div class="chg">▲ +1.8% today</div>
+        </div>
+        <svg viewBox="0 0 600 160" preserveAspectRatio="none">
+          <defs>
+            <linearGradient id="chartGrad" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="#7c4dff" stop-opacity="0.35"/>
+              <stop offset="100%" stop-color="#7c4dff" stop-opacity="0"/>
+            </linearGradient>
+          </defs>
+          <line x1="0" y1="40" x2="600" y2="40" stroke="rgba(255,255,255,0.04)" stroke-width="1"/>
+          <line x1="0" y1="80" x2="600" y2="80" stroke="rgba(255,255,255,0.04)" stroke-width="1"/>
+          <line x1="0" y1="120" x2="600" y2="120" stroke="rgba(255,255,255,0.04)" stroke-width="1"/>
+          <path d="M0,120 L40,110 L80,115 L120,95 L160,100 L200,85 L240,90 L280,75 L320,80 L360,60 L400,65 L440,50 L480,55 L520,40 L560,30 L600,20 L600,160 L0,160 Z" fill="url(#chartGrad)"/>
+          <path d="M0,120 L40,110 L80,115 L120,95 L160,100 L200,85 L240,90 L280,75 L320,80 L360,60 L400,65 L440,50 L480,55 L520,40 L560,30 L600,20" fill="none" stroke="#7c4dff" stroke-width="2" stroke-linejoin="round"/>
+          <circle cx="600" cy="20" r="4" fill="#a87fff"/>
+          <circle cx="600" cy="20" r="8" fill="rgba(168,127,255,0.3)"/>
+        </svg>
+      </div>
+      <div class="chart-x-labels">
+        <span>00:00</span><span>04:00</span><span>08:00</span><span>12:00</span><span>16:00</span><span>20:00</span><span>Now</span>
+      </div>
+    </div>
+
+    <div class="movers-card">
+      <div class="card-title">Top Movers</div>
+      <div class="movers-tabs">
+        <button class="mt active-g">▲ Gainers</button>
+        <button class="mt">▼ Losers</button>
+      </div>
+      <div class="mover-row">
+        <div class="mover-icon" style="background:rgba(0,229,160,0.12);color:var(--green)">SOL</div>
+        <div class="mover-info"><div class="mover-name">Solana</div><div class="mover-full">Crypto</div></div>
+        <div class="mover-right"><div class="mover-price">$186.40</div><div class="mover-pct pct-up">+4.2%</div></div>
+      </div>
+      <div class="mover-row">
+        <div class="mover-icon" style="background:rgba(0,229,160,0.12);color:var(--green)">NVDA</div>
+        <div class="mover-info"><div class="mover-name">NVIDIA</div><div class="mover-full">Tech · Large Cap</div></div>
+        <div class="mover-right"><div class="mover-price">$890.50</div><div class="mover-pct pct-up">+3.7%</div></div>
+      </div>
+      <div class="mover-row">
+        <div class="mover-icon" style="background:rgba(0,229,160,0.12);color:var(--green)">PLTR</div>
+        <div class="mover-info"><div class="mover-name">Palantir</div><div class="mover-full">AI · Mid Cap</div></div>
+        <div class="mover-right"><div class="mover-price">$24.80</div><div class="mover-pct pct-up">+2.9%</div></div>
+      </div>
+      <div class="mover-row">
+        <div class="mover-icon" style="background:rgba(0,229,160,0.12);color:var(--green)">AAPL</div>
+        <div class="mover-info"><div class="mover-name">Apple</div><div class="mover-full">Tech · Large Cap</div></div>
+        <div class="mover-right"><div class="mover-price">$218.40</div><div class="mover-pct pct-up">+2.1%</div></div>
+      </div>
+      <div class="mover-row">
+        <div class="mover-icon" style="background:rgba(0,229,160,0.12);color:var(--green)">AMZN</div>
+        <div class="mover-info"><div class="mover-name">Amazon</div><div class="mover-full">E-Commerce</div></div>
+        <div class="mover-right"><div class="mover-price">$198.20</div><div class="mover-pct pct-up">+1.6%</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SECTOR HEATMAP -->
+  <div class="heatmap-section">
+    <div class="section-header">
+      <div class="section-title">Sector Performance</div>
+      <span class="see-all">View All →</span>
+    </div>
+    <div class="heatmap-grid">
+      <div class="heat-cell big" style="background:rgba(0,229,160,0.22);border:1px solid rgba(0,229,160,0.3)">
+        <div class="heat-name">Technology</div>
+        <div class="heat-pct" style="color:var(--green)">+2.41%</div>
+        <div class="heat-vol">Vol: $824B</div>
+      </div>
+      <div class="heat-cell" style="background:rgba(0,229,160,0.12);border:1px solid rgba(0,229,160,0.2)">
+        <div class="heat-name">Healthcare</div>
+        <div class="heat-pct" style="color:var(--green)">+1.08%</div>
+        <div class="heat-vol">Vol: $312B</div>
+      </div>
+      <div class="heat-cell" style="background:rgba(0,229,160,0.08);border:1px solid rgba(0,229,160,0.15)">
+        <div class="heat-name">Financials</div>
+        <div class="heat-pct" style="color:var(--green)">+0.67%</div>
+        <div class="heat-vol">Vol: $541B</div>
+      </div>
+      <div class="heat-cell" style="background:rgba(255,77,106,0.1);border:1px solid rgba(255,77,106,0.2)">
+        <div class="heat-name">Energy</div>
+        <div class="heat-pct" style="color:var(--red)">-0.54%</div>
+        <div class="heat-vol">Vol: $198B</div>
+      </div>
+      <div class="heat-cell" style="background:rgba(0,229,160,0.06);border:1px solid rgba(0,229,160,0.12)">
+        <div class="heat-name">Consumer</div>
+        <div class="heat-pct" style="color:var(--green)">+0.33%</div>
+        <div class="heat-vol">Vol: $276B</div>
+      </div>
+      <div class="heat-cell" style="background:rgba(255,77,106,0.18);border:1px solid rgba(255,77,106,0.3)">
+        <div class="heat-name">Real Estate</div>
+        <div class="heat-pct" style="color:var(--red)">-1.22%</div>
+        <div class="heat-vol">Vol: $142B</div>
+      </div>
+      <div class="heat-cell" style="background:rgba(0,229,160,0.1);border:1px solid rgba(0,229,160,0.18)">
+        <div class="heat-name">Utilities</div>
+        <div class="heat-pct" style="color:var(--green)">+0.44%</div>
+        <div class="heat-vol">Vol: $88B</div>
+      </div>
+      <div class="heat-cell" style="background:rgba(255,77,106,0.07);border:1px solid rgba(255,77,106,0.15)">
+        <div class="heat-name">Materials</div>
+        <div class="heat-pct" style="color:var(--red)">-0.28%</div>
+        <div class="heat-vol">Vol: $104B</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TRENDING TABLE -->
+  <div class="table-section">
+    <div class="section-header">
+      <div class="section-title">Trending Assets</div>
+      <span class="see-all">Full Screener →</span>
+    </div>
+    <table class="assets-table">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Asset</th>
+          <th class="td-right">Price</th>
+          <th class="td-right">24h %</th>
+          <th class="td-right">7D Chart</th>
+          <th class="td-right">Volume</th>
+          <th class="td-right">Mkt Cap</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td style="color:var(--muted);font-size:0.75rem">1</td>
+          <td><div class="asset-cell"><div class="asset-logo" style="background:rgba(247,147,26,0.2);color:#f7931a">₿</div><div><div class="asset-n">Bitcoin</div><div class="asset-s">BTC</div></div></div></td>
+          <td class="td-right td-num">$85,420</td>
+          <td class="td-right"><span class="mover-pct pct-dn">-0.43%</span></td>
+          <td class="td-right"><div class="sparkline sp-red" style="justify-content:flex-end">
+            <div class="spark-bar" style="height:60%"></div><div class="spark-bar" style="height:80%"></div><div class="spark-bar" style="height:70%"></div><div class="spark-bar" style="height:90%"></div><div class="spark-bar" style="height:75%"></div><div class="spark-bar" style="height:65%"></div><div class="spark-bar" style="height:55%"></div>
+          </div></td>
+          <td class="td-right td-num" style="color:var(--text2)">$48.2B</td>
+          <td class="td-right td-num" style="color:var(--text2)">$1.67T</td>
+          <td class="td-right"><button class="btn-trade">Trade</button></td>
+        </tr>
+        <tr>
+          <td style="color:var(--muted);font-size:0.75rem">2</td>
+          <td><div class="asset-cell"><div class="asset-logo" style="background:rgba(98,126,234,0.2);color:#627eea">Ξ</div><div><div class="asset-n">Ethereum</div><div class="asset-s">ETH</div></div></div></td>
+          <td class="td-right td-num">$3,420</td>
+          <td class="td-right"><span class="mover-pct pct-up">+0.91%</span></td>
+          <td class="td-right"><div class="sparkline sp-green" style="justify-content:flex-end">
+            <div class="spark-bar" style="height:40%"></div><div class="spark-bar" style="height:55%"></div><div class="spark-bar" style="height:50%"></div><div class="spark-bar" style="height:70%"></div><div class="spark-bar" style="height:80%"></div><div class="spark-bar" style="height:90%"></div><div class="spark-bar" style="height:100%"></div>
+          </div></td>
+          <td class="td-right td-num" style="color:var(--text2)">$22.1B</td>
+          <td class="td-right td-num" style="color:var(--text2)">$412B</td>
+          <td class="td-right"><button class="btn-trade">Trade</button></td>
+        </tr>
+        <tr>
+          <td style="color:var(--muted);font-size:0.75rem">3</td>
+          <td><div class="asset-cell"><div class="asset-logo" style="background:rgba(0,229,160,0.2);color:var(--green)">◎</div><div><div class="asset-n">Solana</div><div class="asset-s">SOL</div></div></div></td>
+          <td class="td-right td-num">$186.40</td>
+          <td class="td-right"><span class="mover-pct pct-up">+4.21%</span></td>
+          <td class="td-right"><div class="sparkline sp-green" style="justify-content:flex-end">
+            <div class="spark-bar" style="height:30%"></div><div class="spark-bar" style="height:45%"></div><div class="spark-bar" style="height:60%"></div><div class="spark-bar" style="height:55%"></div><div class="spark-bar" style="height:75%"></div><div class="spark-bar" style="height:88%"></div><div class="spark-bar" style="height:100%"></div>
+          </div></td>
+          <td class="td-right td-num" style="color:var(--text2)">$8.4B</td>
+          <td class="td-right td-num" style="color:var(--text2)">$85.6B</td>
+          <td class="td-right"><button class="btn-trade">Trade</button></td>
+        </tr>
+        <tr>
+          <td style="color:var(--muted);font-size:0.75rem">4</td>
+          <td><div class="asset-cell"><div class="asset-logo" style="background:rgba(0,120,212,0.2);color:#0078d4">Ⓜ</div><div><div class="asset-n">Microsoft</div><div class="asset-s">MSFT</div></div></div></td>
+          <td class="td-right td-num">$415.30</td>
+          <td class="td-right"><span class="mover-pct pct-dn">-0.31%</span></td>
+          <td class="td-right"><div class="sparkline sp-red" style="justify-content:flex-end">
+            <div class="spark-bar" style="height:90%"></div><div class="spark-bar" style="height:85%"></div><div class="spark-bar" style="height:95%"></div><div class="spark-bar" style="height:80%"></div><div class="spark-bar" style="height:70%"></div><div class="spark-bar" style="height:75%"></div><div class="spark-bar" style="height:68%"></div>
+          </div></td>
+          <td class="td-right td-num" style="color:var(--text2)">$18.7B</td>
+          <td class="td-right td-num" style="color:var(--text2)">$3.09T</td>
+          <td class="td-right"><button class="btn-trade">Trade</button></td>
+        </tr>
+        <tr>
+          <td style="color:var(--muted);font-size:0.75rem">5</td>
+          <td><div class="asset-cell"><div class="asset-logo" style="background:rgba(118,185,0,0.2);color:#76b900">N</div><div><div class="asset-n">NVIDIA</div><div class="asset-s">NVDA</div></div></div></td>
+          <td class="td-right td-num">$890.50</td>
+          <td class="td-right"><span class="mover-pct pct-up">+3.71%</span></td>
+          <td class="td-right"><div class="sparkline sp-green" style="justify-content:flex-end">
+            <div class="spark-bar" style="height:50%"></div><div class="spark-bar" style="height:60%"></div><div class="spark-bar" style="height:55%"></div><div class="spark-bar" style="height:70%"></div><div class="spark-bar" style="height:85%"></div><div class="spark-bar" style="height:92%"></div><div class="spark-bar" style="height:100%"></div>
+          </div></td>
+          <td class="td-right td-num" style="color:var(--text2)">$31.2B</td>
+          <td class="td-right td-num" style="color:var(--text2)">$2.19T</td>
+          <td class="td-right"><button class="btn-trade">Trade</button></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- AI BANNER -->
+  <div class="ai-banner">
+    <div class="ai-glyph">🧙</div>
+    <div class="ai-text">
+      <div class="ai-title">Ask Goblin about today's market</div>
+      <div class="ai-sub">AI-powered insights, signals, and analysis in seconds</div>
+    </div>
+    <div class="ai-input-wrap">
+      <input class="ai-input" type="text" placeholder="e.g. Why is NVDA up today?" />
+      <button class="btn-ask">Ask →</button>
+    </div>
+  </div>
+
+</div>
+</body>
+</html>
